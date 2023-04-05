@@ -1,6 +1,6 @@
 import datetime
 import os
-from flask import Flask, render_template, redirect, url_for, flash, abort
+from flask import Flask, render_template, redirect, url_for, flash, abort, request
 from flask_bootstrap import Bootstrap
 from flask_ckeditor import CKEditor
 from functools import wraps
@@ -10,6 +10,7 @@ from sqlalchemy.orm import relationship
 from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 from forms import LoginForm, RegisterForm, CreatePostForm, CommentForm
 from flask_gravatar import Gravatar
+import smtplib
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY")
@@ -225,10 +226,31 @@ with app.app_context():
     def about():
         return render_template("about.html", current_user=current_user)
 
+    MY_EMAIL = "homisek@gmail.com"
+    MY_PASSWORD = "tbvvcmuxastyulpr"
 
-    @app.route("/contact")
+    @app.route("/contact", methods=["GET", "POST"])
     def contact():
-        return render_template("contact.html", current_user=current_user)
+        if request.method == "POST":
+            data = request.form
+            print(data["nam"])
+            print(data["emai"])
+            print(data["phon"])
+            print(data["messag"])
+
+            with smtplib.SMTP("smtp.gmail.com", port=587) as connection:
+                connection.starttls()
+                connection.login(user=MY_EMAIL, password=MY_PASSWORD)
+                connection.sendmail(
+                    from_addr=MY_EMAIL,
+                    to_addrs="wnuczukem@gmail.com",
+                    msg=f"New 'contact me' message\n\nFrom: {data['nam']}\nE-mail: {data['emai']}\nPhone: "
+                        f"{data['phon']}\nMessage: {data['messag']}"
+                )
+            return render_template("contact.html", current_user=current_user, msg_sent=True)
+
+        return render_template("contact.html", current_user=current_user, msg_sent=False)
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)
