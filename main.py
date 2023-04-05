@@ -11,6 +11,7 @@ from flask_login import UserMixin, login_user, LoginManager, current_user, logou
 from forms import LoginForm, RegisterForm, CreatePostForm, CommentForm
 from flask_gravatar import Gravatar
 import smtplib
+from email.mime.text import MIMEText
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY")
@@ -226,26 +227,22 @@ with app.app_context():
     def about():
         return render_template("about.html", current_user=current_user)
 
-    MY_EMAIL = "homisek@gmail.com"
-    MY_PASSWORD = "tbvvcmuxastyulpr"
+    MY_EMAIL = os.environ.get("EMAIL")
+    MY_PASSWORD = os.environ.get("APP_KEY")
 
     @app.route("/contact", methods=["GET", "POST"])
     def contact():
         if request.method == "POST":
             data = request.form
-            print(data["nam"])
-            print(data["emai"])
-            print(data["phon"])
-            print(data["messag"])
-
+            msg = f"New 'contact me' message\n\nFrom: {data['nam']}\nE-mail: {data['emai']}\nPhone: {data['phon']}\n" \
+                  f"Message: {data['messag']}"
             with smtplib.SMTP("smtp.gmail.com", port=587) as connection:
                 connection.starttls()
                 connection.login(user=MY_EMAIL, password=MY_PASSWORD)
                 connection.sendmail(
                     from_addr=MY_EMAIL,
                     to_addrs="wnuczukem@gmail.com",
-                    msg=f"New 'contact me' message\n\nFrom: {data['nam']}\nE-mail: {data['emai']}\nPhone: "
-                        f"{data['phon']}\nMessage: {data['messag']}"
+                    msg=msg.encode("utf8")
                 )
             return render_template("contact.html", current_user=current_user, msg_sent=True)
 
